@@ -1,7 +1,53 @@
+
 from tkinter import *
+from tkinter import ttk
 from functools import partial  # To prevent unwanted windows
-from datetime import date
 import re
+from datetime import date
+
+
+class DisplayHelp:
+
+    def __init__(self):
+        button_font = ("Arial", "12", "bold")
+        button_fg = "#FFFFFF"
+
+        # set up GUI frame
+        self.help_frame = Frame()
+        self.help_frame.grid()
+
+        self.help_heading = Label(self.help_frame,
+                                  text="Help/Instructions",
+                                  font=("Arial", "16", "bold")
+                                  )
+        self.help_heading.grid(row=0)
+
+        instructions = "To use the program, simply enter the shoe size value " \
+                    "you wish to convert and then select what shoe unit your value is " \
+                    "from the 'Input Size' dropdown" \
+                    "then from the 'Output Size' dropdown, select which unit you would like to convert to.  \n\n" \
+                    "Note that your entered value must exceed 0 \n\n" \
+                    "To see your " \
+                    "calculation history and export it to a text " \
+                    "file, please click the 'History / Export' button."
+        self.help_instructions = Label(self.help_frame,
+                                       text=instructions,
+                                       wrap=250, width=40,
+                                       justify="left")
+        self.help_instructions.grid(row=1)
+
+        self.to_converter_button = Button(self.help_frame,
+                                          text=" Continue to Converter",
+                                          bg="#CC6600",
+                                          fg=button_fg,
+                                          font=button_font,
+                                          width=20,
+                                          command=self.open_converter)
+        self.to_converter_button.grid(row=2, padx=5, pady=5)
+
+    def open_converter(self):
+        self.converter = Converter()
+        self.converter.converter_box.mainloop()
 
 
 class Converter:
@@ -9,32 +55,36 @@ class Converter:
     def __init__(self):
 
         # Initialise variables (such as the feedback variable)
-        self.var_feedback = StringVar()
-        self.var_feedback.set("")
+        self.all_calculations = []
+
+        # common format for all dropdown menus
+        dropdown_font = ("Arial", "12")
+
+        # setup dialogue box and background colour
+        self.converter_box = Toplevel()
+
+        # If users press cross at top, closes help and
+        # 'releases' help button
+        self.converter_box.protocol('WM_DELETE_WINDOW', self.close_help)
+
+        # set up GUI frame
+        self.temp_frame = Frame(self.converter_box, width=300, height=200)
+        self.temp_frame.grid()
 
         self.var_has_error = StringVar()
         self.var_has_error.set("no")
 
-        self.all_calculations = []
-
-        # common format for all buttons
-        # Arial size 14 bold, with white text
-        button_font = ("Arial", "12", "bold")
-        button_fg = "#FFFFFF"
-
-        # Set up GUI Frame
-        self.temp_frame = Frame(padx=10, pady=10)
-        self.temp_frame.grid()
+        self.var_feedback = StringVar()
+        self.var_feedback.set("")
 
         self.temp_heading = Label(self.temp_frame,
-                                  text="Temperature Convertor",
+                                  text="Shoe Size Converter",
                                   font=("Arial", "16", "bold")
                                   )
         self.temp_heading.grid(row=0)
 
-        instructions = "Please enter a temperature below and " \
-                       "then press one of the buttons to convert " \
-                       "it from centigrade to Fahrenheit."
+        instructions = "Please select your desired size types from the drop-downs below and " \
+                       "then press convert :)"
         self.temp_instructions = Label(self.temp_frame,
                                        text=instructions,
                                        wrap=250, width=40,
@@ -48,167 +98,201 @@ class Converter:
 
         error = "Please enter a number"
         self.output_label = Label(self.temp_frame, text="",
-                                  fg="#9C0000")
+                                  fg="#228b22")
         self.output_label.grid(row=3)
 
-        # Conversion, help and history / export buttons
+        # Input size label
+        self.input_size_label = Label(self.temp_frame, text="Input size:")
+        self.input_size_label.grid(row=4)
+
+        # Conversion dropdown menu
+        self.from_units = StringVar()
+        self.from_units.set("US")  # default value
+
+        self.dropdown_frame = Frame(self.temp_frame)
+        self.dropdown_frame.grid(row=5)
+
+        # Updated dropdown menus
+        self.from_dropdown = ttk.Combobox(self.dropdown_frame, textvariable=self.from_units, font=dropdown_font,
+                                          state="readonly")
+        self.from_dropdown['values'] = ("US", "EURO", "UK")
+        self.from_dropdown.grid(row=0, column=0, padx=5, pady=5)
+
+        # Output size label
+        self.output_size_label = Label(self.temp_frame, text="Output size:")
+        self.output_size_label.grid(row=6)
+
+        # Conversion dropdown menu
+        self.to_units = StringVar()
+        self.to_units.set("EURO")  # default value
+
+        self.to_dropdown = ttk.Combobox(self.temp_frame, textvariable=self.to_units, font=dropdown_font,
+                                        state="readonly")
+        self.to_dropdown['values'] = ("US", "EURO", "UK")
+        self.to_dropdown.grid(row=7, padx=5, pady=5)
+
+        # Radio buttons for selecting men's or women's sizing
+        self.sizing_var = StringVar()
+        self.sizing_var.set("Men's")
+        self.sizing_frame = Frame(self.temp_frame)
+        self.sizing_frame.grid(row=8)
+        self.men_sizing = Radiobutton(self.sizing_frame, text="Men's", variable=self.sizing_var, value="Men's")
+        self.men_sizing.grid(row=0, column=0, padx=5, pady=5)
+        self.women_sizing = Radiobutton(self.sizing_frame, text="Women's", variable=self.sizing_var, value="Women's")
+        self.women_sizing.grid(row=0, column=1, padx=5, pady=5)
+
         self.button_frame = Frame(self.temp_frame)
-        self.button_frame.grid(row=4)
+        self.button_frame.grid(row=10)
 
-        self.to_celsius_button = Button(self.button_frame,
-                                        text="To Celsius",
-                                        bg="#990099",
-                                        fg=button_fg,
-                                        font=button_font, width=12,
-                                        command=lambda: self.temp_convert(-459))
-        self.to_celsius_button.grid(row=0, column=0, padx=5, pady=5)
-
-        self.to_farenheit_button = Button(self.button_frame,
-                                          text="To Farenheit",
-                                          bg="#009900",
-                                          fg=button_fg,
-                                          font=button_font, width=12,
-                                          command=lambda: self.temp_convert(-273))
-        self.to_farenheit_button.grid(row=0, column=1, padx=5, pady=5)
-
-        self.to_help_button = Button(self.button_frame,
-                                     text="Help / Info",
-                                     bg="#CC6600",
-                                     fg=button_fg,
-                                     font=button_font,
-                                     width=12,
-                                     command=self.to_help)
-        self.to_help_button.grid(row=1, column=0, padx=5, pady=5)
+        # Convert button
+        self.convert_button = Button(self.temp_frame,
+                                     text="Convert",
+                                     bg="teal",
+                                     fg="white",
+                                     font=("Arial", "12", "bold"),
+                                     width=28,
+                                     command=self.temp_convert)
+        self.convert_button.grid(row=9, padx=5, pady=5)
 
         self.to_history_button = Button(self.button_frame,
                                         text="History / Export",
-                                        bg="#004C99",
-                                        fg=button_fg,
-                                        font=button_font, width=12,
+                                        bg="black",
+                                        fg="white",
+                                        font=("Arial", "12", "bold"),
+                                        width=12,
                                         state=DISABLED,
                                         command=lambda: self.to_history(self.all_calculations)
                                         )
-        self.to_history_button.grid(row=1, column=1, padx=5, pady=5)
+        self.to_history_button.grid(row=0, column=1, padx=5, pady=5)
 
-    # checks user input and if it's valid, converts temperature
+        self.back_to_info = Button(self.button_frame,
+                                        text="Back to Help",
+                                        bg="grey",
+                                        fg="white",
+                                        font=("Arial", "12", "bold"),
+                                        width=12,
+                                        command=self.close_convert)
+        self.back_to_info.grid(row=0, column=0, padx=5, pady=5)
 
-# displays help / instructions
-class DisplayHelp:
+        # Conversion rates
+        self.conversion_rates = {
+            "US Men's": {
+                "EURO Men's": 33,
+                "US Men's": 0,
+                "UK Men's": -0.5
+            },
+            "US Women's": {
+                "EURO Women's": 31,
+                "US Women's": 0
+            },
+            "EURO Men's": {
+                "US Men's": -33,
+                "EURO Men's": 0,
+                "UK Men's": -33.5
+            },
+            "EURO Women's": {
+                "US Women's": -31,
+                "EURO Women's": 0
+            },
+            "UK Men's": {
+                "US Men's": 0.5,
+                "EURO Men's": 33.5,
+                "UK Men's": 0
+            }
+        }
 
-    def __init__(self, partner):
-        def check_temp(self, min_value):
+    # Opens History / Export dialogue
+    def to_history(self, all_calculations):
+        HistoryExport(self, all_calculations)
 
-            has_error = "no"
-            error = "Please enter a number that is more " \
-                    "than {}".format(min_value)
+    def close_convert(self):
+        self.converter_box.destroy()
 
-            # check that user has entered a valid number...
+    def check_temp(self, min_value):
 
-            response = self.temp_entry.get()
+        has_error = "no"
+        error = "Please enter a number that is more " \
+                "than {}".format(min_value)
 
-            try:
-                response = float(response)
+        # check that user has entered a valid number...
 
-                if response < min_value:
-                    has_error = "yes"
+        response = self.temp_entry.get()
 
-            except ValueError:
+        try:
+            response = float(response)
+
+            if response < min_value:
                 has_error = "yes"
 
-            # Sets var_has_error so that entry box and
-            # labels can be correctly formatted by formatting function
-            if has_error == "yes":
-                self.var_has_error.set("yes")
-                self.var_feedback.set(error)
-                return "invalid"
+        except ValueError:
+            has_error = "yes"
 
-            # If we have no errors...
-            else:
-                # set to 'no' in case of previous errors
-                self.var_has_error.set("no")
+        # Sets var_has_error so that entry box and
+        # labels can be correctly formatted by formatting function
+        if has_error == "yes":
+            self.var_has_error.set("yes")
+            self.var_feedback.set(error)
+            return "invalid"
 
-                # return number to be
-                # converted and enable history button
-                self.to_history_button.config(state=NORMAL)
-                return response
+        # If we have no errors...
+        else:
+            # set to 'no' in case of previous errors
+            self.var_has_error.set("no")
 
-        @staticmethod
-        def round_ans(val):
-            var_rounded = (val * 2 + 1) // 2
-            return "{:.0f}".format(var_rounded)
+            # return number to be
+            # converted and enable history button
+            self.to_history_button.config(state=NORMAL)
+            return response
 
-        # check temperature is valid and convert it
-        def temp_convert(self, min_val):
-            to_convert = self.check_temp(min_val)
-            deg_sign = u'\N{DEGREE SIGN}'
-            set_feedback = "yes"
-            answer = ""
-            from_to = ""
+    def output_answer(self):
+        output = self.var_feedback.get()
+        has_errors = self.var_has_error.get()
 
-            if to_convert == "invalid":
-                set_feedback = "no"
+        if has_errors == "yes":
+            # red text, pink entry box
+            self.output_label.config(fg="#9C0000", font=("Arial", "10"))
+            self.temp_entry.config(bg="#F8CECC")
 
-            # Convert to Celsius
-            elif min_val == -459:
-                # do calculation
-                answer = (to_convert - 32) * 5 / 9
-                from_to = "{} F{} is {} C{}"
+        else:
+            self.output_label.config(fg="#004C00", font=("Arial", "14", "bold"))
+            self.temp_entry.config(bg="#FFFFFF")
 
-            # convert to Farenheit
-            else:
-                answer = to_convert * 1.8 + 32
-                from_to = "{} C{} is {} F{}"
+        self.output_label.config(text=output)
 
-            if set_feedback == "yes":
-                to_convert = self.round_ans(to_convert)
-                answer = self.round_ans(answer)
+        # clears entry box ready for the next calculation
+        self.temp_entry.delete(0, END)
 
-                # create user output and add to calculation history
-                feedback = from_to.format(to_convert, deg_sign,
-                                          answer, deg_sign)
-                self.var_feedback.set(feedback)
+    def temp_convert(self):
+        to_convert = self.check_temp(0)
+        if to_convert is not None:
+            from_units = self.from_units.get()
+            to_units = self.to_units.get()
+            sizing_var = self.sizing_var.get()
+            converted_size, message = self.convert_size(from_units, to_units, sizing_var, to_convert)
+            self.output_label.config(text=message)
+            self.all_calculations.append(message)
 
-                self.all_calculations.append(feedback)
+# pull the appropriate data from the data set, runs the conversion and then prints the
+    # proper conversion
 
-            self.output_answer()
+    def convert_size(self, from_units, to_units, sizing_var, to_convert):
 
-        # Shows user output and clears entry widget
-        # ready for next calculation
-        def output_answer(self):
-            output = self.var_feedback.get()
-            has_errors = self.var_has_error.get()
+        from_key = f"{from_units} {sizing_var}"
 
-            if has_errors == "yes":
-                # red text, pink entry box
-                self.output_label.config(fg="#9C0000", font=("Arial", "10"))
-                self.temp_entry.config(bg="#F8CECC")
+        to_key = f"{to_units} {sizing_var}"
 
-            else:
-                self.output_label.config(fg="#004C00", font=("Arial", "14", "bold"))
-                self.temp_entry.config(bg="#FFFFFF")
-
-            self.output_label.config(text=output)
-
-            # clears entry box ready for the next calculation
-            self.temp_entry.delete(0, END)
-
-        # Opens History / Export dialogue
-        def to_history(self, all_calculations):
-            HistoryExport(self, all_calculations)
-
-        # Opens Help / Info dialogue box
-        def to_help(self):
-            DisplayHelp(self, )
-
-    # closes help dialogue (used by button and x at top of dialogue)
-    def close_help(self, partner):
-        # Put help button back to normal...
-        partner.to_help_button.config(state=NORMAL)
-        self.help_box.destroy()
+        found_conversion_rate = self.conversion_rates[from_key][to_key]
 
 
-# displays calculation history and allows users to export data
-# to a text file
+
+        converted_size = to_convert + found_conversion_rate
+
+        return converted_size, f"{to_convert} {from_units} {sizing_var} is {converted_size} {to_units} {sizing_var}"
+
+    def close_help(self):
+        self.converter_box.destroy()
+
+
 class HistoryExport:
 
     def __init__(self, partner, calc_list):
@@ -468,11 +552,9 @@ class HistoryExport:
         # Put help button back to normal...
         partner.to_history_button.config(state=NORMAL)
         self.history_box.destroy()
-
-
 # main routine
 if __name__ == "__main__":
     root = Tk()
-    root.title("Temperature Converter")
-    Converter()
+    root.title("Shoe Size Converter")
+    DisplayHelp()
     root.mainloop()
