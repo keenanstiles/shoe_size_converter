@@ -210,43 +210,33 @@ class Converter:
 
     def check_shoe(self, min_value):
 
-        has_error = "no"
-        error = "Please enter a number that is more " \
-                "than {}".format(min_value)
-
-        # check that user has entered a valid number...
-
-        response = self.shoe_entry.get()
+        has_errors = ""
 
         try:
-            response = float(response)
-
+            response = int(self.shoe_entry.get())
             if response < min_value:
-                has_error = "yes"
-
+                print("Invalid input")
+                has_errors = "yes"
+                self.var_has_error.set("yes")
+                self.var_feedback.set("Please enter a number greater than {}".format(min_value))
+                return None
+            else:
+                self.var_has_error.set("no")
+                # return number to be
+                # converted and enable history button
+                self.to_history_button.config(state=NORMAL)
+                return response
         except ValueError:
-            has_error = "yes"
-
-        # Sets var_has_error so that entry box and
-        # labels can be correctly formatted by formatting function
-        if has_error == "yes":
             self.var_has_error.set("yes")
-            self.var_feedback.set(error)
-            return "invalid"
+            has_errors = "yes"
+            self.var_feedback.set("Please enter a valid number")
+            return None
 
-        # If we have no errors...
-        else:
-            # set to 'no' in case of previous errors
-            self.var_has_error.set("no")
-
-            # return number to be
-            # converted and enable history button
-            self.to_history_button.config(state=NORMAL)
-            return response
 
     def output_answer(self):
         output = self.var_feedback.get()
         has_errors = self.var_has_error.get()
+
 
         if has_errors == "yes":
             # red text, pink entry box
@@ -263,7 +253,8 @@ class Converter:
         self.shoe_entry.delete(0, END)
 
     def shoe_convert(self):
-        to_convert = self.check_shoe(0)
+        error = f"Please enter a valid number greater than 4"
+        to_convert = self.check_shoe(4)
         if to_convert is not None:
             from_units = self.from_units.get()
             to_units = self.to_units.get()
@@ -272,7 +263,13 @@ class Converter:
             self.output_label.config(text=message)
             self.all_calculations.append(message)
 
-# pull the appropriate data from the data set, runs the conversion and then prints the
+        else:
+            self.var_has_error.set("yes")
+            self.var_feedback.set(error)
+            self.output_label.config(text=error)
+
+
+    # pull the appropriate data from the data set, runs the conversion and then prints the
     # proper conversion
 
     def convert_size(self, from_units, to_units, sizing_var, to_convert):

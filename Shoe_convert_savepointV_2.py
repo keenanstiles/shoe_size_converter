@@ -198,6 +198,11 @@ class Converter:
                 "US Men's": 0.5,
                 "EURO Men's": 33.5,
                 "UK Men's": 0
+            },
+            "UK Women's": {
+                "US Women's": 0.5,
+                "EURO Men's": 33.5,
+                "UK Men's": 0
             }
         }
 
@@ -209,44 +214,34 @@ class Converter:
         self.converter_box.destroy()
 
     def check_shoe(self, min_value):
-
-        has_error = "no"
-        error = "Please enter a number that is more " \
-                "than {}".format(min_value)
-
-        # check that user has entered a valid number...
-
-        response = self.shoe_entry.get()
-
+        has_errors = ""
         try:
-            response = float(response)
-
+            response = int(self.shoe_entry.get())
             if response < min_value:
-                has_error = "yes"
-
+                self.var_has_error.set("yes")
+                self.output_label.config(text=f"Please enter a number greater than {min_value}", fg="#9C0000")
+                self.var_feedback.set(f"Please enter a number greater than {min_value}")
+                self.output_answer()
+                return None
+            else:
+                self.var_has_error.set("no")
+                # return number to be
+                # converted and enable history button
+                self.to_history_button.config(state=NORMAL)
+                self.output_answer()
+                return response
         except ValueError:
-            has_error = "yes"
-
-        # Sets var_has_error so that entry box and
-        # labels can be correctly formatted by formatting function
-        if has_error == "yes":
             self.var_has_error.set("yes")
-            self.var_feedback.set(error)
-            return "invalid"
+            self.var_feedback.set("Please enter a valid number")
+            self.output_label.config(text="Please enter a valid number", fg="#9C0000")
+            self.output_answer()
+            return None
 
-        # If we have no errors...
-        else:
-            # set to 'no' in case of previous errors
-            self.var_has_error.set("no")
-
-            # return number to be
-            # converted and enable history button
-            self.to_history_button.config(state=NORMAL)
-            return response
 
     def output_answer(self):
         output = self.var_feedback.get()
         has_errors = self.var_has_error.get()
+
 
         if has_errors == "yes":
             # red text, pink entry box
@@ -254,7 +249,7 @@ class Converter:
             self.shoe_entry.config(bg="#F8CECC")
 
         else:
-            self.output_label.config(fg="#004C00", font=("Arial", "14", "bold"))
+            self.output_label.config(fg="#004C00", font=("Arial", "10"))
             self.shoe_entry.config(bg="#FFFFFF")
 
         self.output_label.config(text=output)
@@ -263,16 +258,33 @@ class Converter:
         self.shoe_entry.delete(0, END)
 
     def shoe_convert(self):
-        to_convert = self.check_shoe(0)
+        error = "Please enter a valid integer greater than 4 US, \n" \
+                "or equivalent value"
+        to_convert = self.check_shoe(4)
+
         if to_convert is not None:
             from_units = self.from_units.get()
             to_units = self.to_units.get()
             sizing_var = self.sizing_var.get()
             converted_size, message = self.convert_size(from_units, to_units, sizing_var, to_convert)
-            self.output_label.config(text=message)
-            self.all_calculations.append(message)
 
-# pull the appropriate data from the data set, runs the conversion and then prints the
+            if (to_units == "US" and converted_size < 4) or \
+                    (to_units == "EURO" and converted_size < 37) or \
+                    (to_units == "UK" and converted_size < 3.5):
+                error_message = f"Converted size is less than 4 US, or equivalent value"
+                self.output_label.config(text=error_message, fg="#9C0000")
+                self.var_feedback.set(error_message)
+            else:
+                self.output_label.config(text=message, fg="#228b22")
+                self.all_calculations.append(message)
+        else:
+            self.var_has_error.set("yes")
+            self.output_label.config(text=error, fg="#9C0000")
+            self.var_feedback.set(error)
+
+
+
+    # pull the appropriate data from the data set, runs the conversion and then prints the
     # proper conversion
 
     def convert_size(self, from_units, to_units, sizing_var, to_convert):
